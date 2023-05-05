@@ -1,0 +1,100 @@
+ingress:
+  - name: in
+    type: general
+    transport:
+      - type: tcp
+        ip: 127.0.0.1
+        port: 20080
+        smux: false
+    proxy:
+      type: socks
+  - name: tunin
+    type: tun
+    mtu: 1400
+    cidr: 198.18.0.1/16
+    port: 10000
+    hijack:
+      - 0.0.0.0:53
+  # - name: udpin
+  #   type: general
+  #   transport:
+  #     - type: udp
+  #       ip: 127.0.0.1
+  #       port: 40000
+  #       faketcp: false
+  #     - type: tcp
+  #       ip: 127.0.0.1
+  #       port: 40000
+  #       smux: false
+  #   proxy:
+  #     type: none
+egress:
+  - name: out
+    type: general
+    transport:
+      - type: tcp
+        ip: 1.1.1.1
+        port: 29950
+        smux: false
+      - type: udp 
+        ip: 1.1.1.1
+        port: 29950
+        faketcp: false
+    proxy: # ss
+      type: shadowsocks
+      cipher: aes-128-gcm
+      password: 123456
+      udp: true
+  - name: outlocal
+    type: general
+    transport:
+      - type: tcp
+        ip: 192.168.0.108
+        port: 50000
+        smux: false
+      - type: udp 
+        ip: 192.168.0.108
+        port: 50000
+        faketcp: false
+    proxy:
+      type: shadowsocks
+      cipher: aes-128-gcm
+      password: "123"
+      udp: true
+  # - name: udpout
+  #   type: general
+  #   transport:
+  #     - type: udp
+  #       ip: 192.168.0.108
+  #       port: 53
+  #       faketcp: false
+  #     - type: tcp
+  #       ip: 127.0.0.1
+  #       port: 40001
+  #       smux: false
+  #   proxy:
+  #     type: none
+rule:
+  - PRIOR,ROUTE,DOMAIN,GEOIP
+    #  - ROUTE,udpin,udpout
+#  - ROUTE,g1,g2,random
+#  - ROUTE,g1,g2,random
+  # - DOMAIN,+.youtube.com,out
+  # - DOMAIN,google.com,out
+  # - DOMAIN,+.facebook.com,out
+#  - GEOIP,CN,g1
+  - GEOIP,CN,DIRECT
+  - DEFAULT,out
+dns:
+  enable: true
+  listen: "0.0.0.0:53"
+  fakeip:
+    enable: true
+    cidr: 198.18.0.1/15
+    ttl: 30
+  upstream:
+    - 114.114.114.114:53
+    - 8.8.8.8:53
+log:
+  level: info
+  path: ./error.log
