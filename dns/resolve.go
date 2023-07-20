@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/miekg/dns"
@@ -32,7 +33,12 @@ func ResolveIPv4(domain string) ([]net.IP, error) {
 		return nil, err
 	}
 	for _, v := range r.Answer {
-		out = append(out, v.(*dns.A).A)
+		if value, ok := v.(*dns.A); ok {
+			out = append(out, value.A)
+		}
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("can't resolve domain %v\n", domain)
 	}
 	return out, nil
 }
@@ -57,7 +63,12 @@ func ResolveIPv6(domain string) ([]net.IP, error) {
 		return nil, err
 	}
 	for _, v := range r.Answer {
-		out = append(out, v.(*dns.AAAA).AAAA)
+		if value, ok := v.(*dns.AAAA); ok {
+			out = append(out, value.AAAA)
+		}
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("can't resolve domain %v\n", domain)
 	}
 	return out, nil
 }

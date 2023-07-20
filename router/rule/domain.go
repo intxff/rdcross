@@ -30,8 +30,8 @@ func (d *Domain) Match(m message.Metadata, others ...any) (*Action, bool) {
 	if err != nil {
 		return nil, false
 	}
-	if data, ok := t.Value().(Action); ok {
-		return &data, true
+	if data, ok := t.Value().(*Action); ok {
+		return data, true
 	}
 	return nil, false
 }

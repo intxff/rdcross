@@ -7,8 +7,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var defaultLogger *zap.Logger
-
 type Log struct {
 	Level string `yaml:"level"`
 	Path  string `yaml:"path"`
@@ -16,7 +14,7 @@ type Log struct {
 
 func init() {
 	var zc = zap.Config{
-		Level:             zap.NewAtomicLevelAt(zap.DebugLevel),
+		Level:             zap.NewAtomicLevelAt(zap.ErrorLevel),
 		Development:       false,
 		DisableCaller:     true,
 		DisableStacktrace: true,
@@ -41,14 +39,15 @@ func init() {
 	}
 
 	var err error
-	defaultLogger, err = zc.Build()
+    defaultLogger, err := zc.Build()
 	if err != nil {
 		panic(fmt.Sprintf("[LOGGER] ERROR: %v\n", err))
 	}
+    zap.ReplaceGlobals(defaultLogger)
 }
 
 func UpdateLogger(l *Log) {
-    defaultLogger.Sync()
+    zap.L().Sync()
 
 	var (
 		logLevel zap.AtomicLevel
@@ -98,24 +97,24 @@ func UpdateLogger(l *Log) {
 	if err != nil {
 		panic(fmt.Sprintf("[LOGGER] ERROR: %v\n", err))
 	}
-    defaultLogger = newLogger
+    zap.ReplaceGlobals(newLogger)
 }
 
 func CloseLogger() {
-	defaultLogger.Sync()
+	zap.L().Sync()
 }
 func Error(s string, f ...zap.Field) {
-	defaultLogger.Error(s, f...)
+	zap.L().Error(s, f...)
 }
 func Info(s string, f ...zap.Field) {
-	defaultLogger.Info(s, f...)
+	zap.L().Info(s, f...)
 }
 func Debug(s string, f ...zap.Field) {
-	defaultLogger.Debug(s, f...)
+	zap.L().Debug(s, f...)
 }
 func Panic(s string, f ...zap.Field) {
-    defaultLogger.Panic(s, f...)
+    zap.L().Panic(s, f...)
 }
 func Fatal(s string, f ...zap.Field) {
-    defaultLogger.Fatal(s, f...)
+    zap.L().Fatal(s, f...)
 }

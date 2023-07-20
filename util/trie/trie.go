@@ -11,7 +11,7 @@ type Trie struct {
 }
 
 func New() *Trie {
-	return &Trie{next: make(map[string]*Trie), data: *new(any)} 
+	return &Trie{next: make(map[string]*Trie), data: *new(any)}
 }
 
 func (t *Trie) Value() any {
@@ -53,6 +53,9 @@ func (t *Trie) Search(s string) (*Trie, error) {
 				if cur.isDataNode() {
 					return cur, nil
 				}
+				if cur.hasWild() {
+                    return cur.next["+"], nil
+				}
 			}
 		case cur.hasWild():
 			cur = cur.next["+"]
@@ -75,7 +78,7 @@ func (t *Trie) Search(s string) (*Trie, error) {
 }
 
 func (t *Trie) isDataNode() bool {
-	return t.data != ""
+	return t.data != nil
 }
 
 func (t *Trie) hasString(s string) bool {
@@ -93,5 +96,5 @@ func (t *Trie) hasWild() bool {
 }
 
 func (t *Trie) Empty() bool {
-    return len(t.next) == 0
+	return len(t.next) == 0
 }

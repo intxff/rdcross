@@ -52,9 +52,6 @@ func (d *DefaultRouter) Dispatch(m message.Metadata) egress.Egress {
 	}
 
 	if action.Policy.Type() == policy.TypeNone {
-		if action.Egress == "DIRECT" {
-			fmt.Printf("DIRECT: %v\n", d.Egress[action.Egress])
-		}
 		return d.Egress[action.Egress]
 	}
 

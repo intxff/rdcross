@@ -28,6 +28,16 @@ type iff struct {
 
 type ifaces map[string]iff
 
+func validIface(netif net.Interface) bool {
+	if netif.Flags&net.FlagUp != net.FlagUp ||
+		netif.Flags&net.FlagLoopback == net.FlagLoopback ||
+		netif.Flags&net.FlagRunning != net.FlagRunning ||
+        netif.Flags&net.FlagPointToPoint == net.FlagPointToPoint {
+		return false
+	}
+	return true
+}
+
 func newInterfaces() (ifaces, error) {
 	_ifaces := make(map[string]iff)
 
@@ -40,7 +50,7 @@ func newInterfaces() (ifaces, error) {
 	for _, v := range iffs {
 		v := v
 		// drop down and loopback interface
-		if v.Flags & net.FlagUp != 1 || v.Flags & net.FlagLoopback == 1 {
+		if !validIface(v) {
 			continue
 		}
 
@@ -116,7 +126,14 @@ func GetIPv4() (net.IP, error) {
 
 	out := make(net.IP, 4)
 	for _, v := range defaultIfaces {
+		if len(v.ipv4) == 0 {
+			continue
+		}
 		copy(out, v.ipv4[0])
+		break
+	}
+	if len(out) == 0 {
+		return nil, errors.New("no ipv4 address")
 	}
 	return out, nil
 }
@@ -130,7 +147,14 @@ func GetIPv6() (net.IP, error) {
 
 	out := make(net.IP, 16)
 	for _, v := range defaultIfaces {
+		if len(v.ipv6) == 0 {
+			continue
+		}
 		copy(out, v.ipv6[0])
+		break
+	}
+	if len(out) == 0 {
+		return nil, errors.New("no ipv6 address")
 	}
 	return out, nil
 }

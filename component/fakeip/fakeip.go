@@ -1,7 +1,6 @@
 package fakeip
 
 import (
-	"errors"
 	"math"
 	"math/big"
 	"net"
@@ -20,7 +19,7 @@ type FakeIP struct {
 	ifaceAddr     net.IP
 }
 
-func New(ipCIDR string, lruSize int) (*FakeIP, error) {
+func New(ipCIDR string) (*FakeIP, error) {
 	ifaceAddr, ipRange, err := net.ParseCIDR(ipCIDR)
 	if err != nil {
 		return nil, err
@@ -28,9 +27,7 @@ func New(ipCIDR string, lruSize int) (*FakeIP, error) {
 
 	ones, bits := ipRange.Mask.Size()
 	rooms := bits - ones
-	if math.Log2(float64(lruSize)) >= float64(rooms) {
-		return nil, errors.New("LRU size is bigger than subnet size")
-	}
+    lruSize := int(math.Pow(2, float64(rooms)))-3
 
 	nextIP := big.NewInt(0).SetBytes(ipRange.IP)
 
@@ -78,9 +75,9 @@ func (f *FakeIP) Put(domain string) net.IP {
 
 	var ip net.IP
 	if f.lru.IsFull() {
-		ip = f.lru.GetLastValue().(net.IP)
-		f.lru.Put(domain, ip.String())
-		return ip
+        ips := f.lru.GetLastValue().(string)
+		f.lru.Put(domain, ips)
+		return net.ParseIP(ips)
 	}
 	for {
 		f.nextIP = f.nextIP.Add(f.nextIP, big.NewInt(1))

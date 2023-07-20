@@ -117,6 +117,7 @@ func registerLogger(value ...any) error {
 		return ErrInvalidValue(Logger)
 	}
 	global.muLogger.Lock()
+    log.UpdateLogger(v)
 	global.Logger = v
 	global.muLogger.Unlock()
 	return nil
@@ -205,7 +206,7 @@ func Init(c *config.RdConfig) error {
 	var fakeipPool *fakeip.FakeIP
 	domainTrie := trie.New()
 	if c.DNS.FakeIP.Enable {
-		fakeipPool, _ = fakeip.New(c.DNS.FakeIP.Cidr, 10000)
+		fakeipPool, _ = fakeip.New(c.DNS.FakeIP.Cidr)
 	}
 
 	// logger
@@ -232,8 +233,6 @@ func Init(c *config.RdConfig) error {
 
 	// router
 	router := c.ParseRouter(domainTrie, eg)
-    fmt.Printf("egress: %v\n", global.Egress)
-    fmt.Printf("router: %v\n", router)
 	if err := Register(Router, &router); err != nil {
 		return err
 	}

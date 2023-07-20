@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -139,7 +140,7 @@ func initTun(t *Tun, name, iprange string, mtu, port int, hijack []string) error
 
 	relayIP := ip
 
-	ipPool, err := fakeip.New(iprange, 10000)
+	ipPool, err := fakeip.New(iprange)
 	if err != nil {
 		return err
 	}
@@ -363,7 +364,11 @@ func (t *Tun) processStream(packet ipPacket) {
 			realSrc *net.TCPAddr
 		)
 		// find mapped applications addtess pair
-		entry, _ := t.tcpNat.Load(dstAddr.String())
+		entry, ok := t.tcpNat.Load(dstAddr.String())
+		// last time unclosed connection in tun device
+		if !ok {
+			return
+		}
 		realDst = entry.(natEntry).from.(*net.TCPAddr)
 		realSrc = entry.(natEntry).to.(*net.TCPAddr)
 		// modify src address to mapped address pair
@@ -529,6 +534,11 @@ func (t *Tun) relay(r router.Router) error {
 				if domain, exist := dns.GetDomainByIP(realDst.IP); exist {
 					domain = domain[:len(domain)-1]
 					m.WithDomain(domain).WithRemotePort(realDst.Port)
+					if ip, err := dns.ResolveIPv4(domain); err != nil {
+						log.Error("failed to resolve", zap.Error(err))
+					} else {
+						m.WithRemoteIP(ip[0])
+					}
 					remoteAddr = domain
 				} else {
 					m.WithRemoteIP(realDst.IP).WithRemotePort(realDst.Port)
@@ -596,21 +606,26 @@ func (t *Tun) relay(r router.Router) error {
 				return
 			}
 			wg.Done()
-			buf := make([]byte, 4096)
-			for {
-				msg := <-t.dnsQuery
-				cAddr := &net.UDPAddr{IP: msg.Metadata().ClientIP, Port: msg.Metadata().ClientPort}
-				l.SetDeadline(time.Now().Add(3 * time.Second))
-				_, err := l.WriteTo(msg.Payload(), t.dnsAddr)
-				if err != nil {
-					continue
+			wgdns := sync.WaitGroup{}
+			wgdns.Add(runtime.NumCPU())
+			go func() {
+                defer wgdns.Done()
+				buf := make([]byte, 4096)
+				for {
+					msg := <-t.dnsQuery
+					cAddr := &net.UDPAddr{IP: msg.Metadata().ClientIP, Port: msg.Metadata().ClientPort}
+					l.SetDeadline(time.Now().Add(1000 * time.Millisecond))
+					_, err := l.WriteTo(msg.Payload(), t.dnsAddr)
+					if err != nil {
+						continue
+					}
+					n, err := l.Read(buf)
+					if err != nil {
+						continue
+					}
+					tc.WriteTo(buf[:n], cAddr)
 				}
-				n, err := l.Read(buf)
-				if err != nil {
-					continue
-				}
-				tc.WriteTo(buf[:n], cAddr)
-			}
+			}()
 		}()
 
 		// handle connection
@@ -643,6 +658,11 @@ func (t *Tun) relay(r router.Router) error {
 			if domain, exist := dns.GetDomainByIP(realDst.IP); exist {
 				domain = domain[:len(domain)-1]
 				m.WithDomain(domain).WithRemotePort(realDst.Port)
+				if ip, err := dns.ResolveIPv4(domain); err != nil {
+					log.Error("failed to resolve", zap.Error(err))
+				} else {
+					m.WithRemoteIP(ip[0])
+				}
 				remoteAddr = domain
 			} else {
 				m.WithRemoteIP(realDst.IP).WithRemotePort(realDst.Port)
@@ -673,7 +693,6 @@ func (t *Tun) relay(r router.Router) error {
 				}
 			}
 			out := r.Dispatch(*m)
-			fmt.Printf("%v\n", out)
 			log.Info(t.logString("connection dispatched"),
 				zap.String("egress", out.Name()))
 			out.ProcessPacket(tc, msg)

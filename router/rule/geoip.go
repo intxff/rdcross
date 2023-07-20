@@ -2,7 +2,6 @@ package rule
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/intxff/rdcross/component/message"
 	"github.com/intxff/rdcross/component/mmdb"
@@ -37,20 +36,15 @@ func (g *GEOIP) Name() string {
 func (g *GEOIP) Match(m message.Metadata, others ...any) (*Action, bool) {
 	ip := m.RemoteIP
 	if ip == nil {
-		fmt.Printf("nil ip: %v, match: %v\n", ip, false)
 		return nil, false
 	}
 	country, err := g.Mmdb.Country(ip)
 	if err != nil {
-		log.Error(fmt.Sprintf("get geoip error when match ip:%v", ip.String()), zap.Error(err))
-		fmt.Printf("ip: %v, match: %v\n", ip, false)
 		return nil, false
 	}
 	if action, exist := g.Action[country.Country.IsoCode]; exist {
-        fmt.Printf("ip: %v, match: %v, action: %v\n", ip, true, action)
 		return action, true
 	}
-	fmt.Printf("ip: %v, match: %v\n", ip, false)
 	return nil, false
 }
 
