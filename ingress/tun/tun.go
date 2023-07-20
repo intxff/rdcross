@@ -534,7 +534,7 @@ func (t *Tun) relay(r router.Router) error {
 				if domain, exist := dns.GetDomainByIP(realDst.IP); exist {
 					domain = domain[:len(domain)-1]
 					m.WithDomain(domain).WithRemotePort(realDst.Port)
-					if ip, err := dns.ResolveIPv4(domain); err != nil {
+					if ip, err := dns.ResolveIP(domain); err != nil {
 						log.Error("failed to resolve", zap.Error(err))
 					} else {
 						m.WithRemoteIP(ip[0])
@@ -596,7 +596,7 @@ func (t *Tun) relay(r router.Router) error {
 
 		// handle dns query
 		go func() {
-			ip, _ := iface.GetIPv4()
+			ip, _ := iface.GetIP()
 			l, err := net.ListenUDP("udp", &net.UDPAddr{IP: ip})
 			if err != nil {
 				log.Error(t.logString("failed to listen udp for hijacking dns"),
@@ -658,7 +658,7 @@ func (t *Tun) relay(r router.Router) error {
 			if domain, exist := dns.GetDomainByIP(realDst.IP); exist {
 				domain = domain[:len(domain)-1]
 				m.WithDomain(domain).WithRemotePort(realDst.Port)
-				if ip, err := dns.ResolveIPv4(domain); err != nil {
+				if ip, err := dns.ResolveIP(domain); err != nil {
 					log.Error("failed to resolve", zap.Error(err))
 				} else {
 					m.WithRemoteIP(ip[0])

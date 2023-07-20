@@ -117,6 +117,13 @@ func GetIPv6ByName(name string) (net.IP, error) {
 	return defaultIfaces.getIPv6ByName(name)
 }
 
+func GetIP() (net.IP, error) {
+    if ip, err := GetIPv4(); err == nil {
+        return ip, err
+    }
+    return GetIPv6()
+}
+
 func GetIPv4() (net.IP, error) {
 	mu.RLock()
 	defer mu.RUnlock()

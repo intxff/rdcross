@@ -4,6 +4,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/intxff/rdcross/component/fakeip"
 	"github.com/intxff/rdcross/component/iface"
@@ -55,7 +56,7 @@ func asyncQuery(m *dns.Msg, upstream []string) (*dns.Msg, error) {
 	res := make(chan response, l)
 
 	for i := 0; i < l; i++ {
-		lIP, err := iface.GetIPv4()
+		lIP, err := iface.GetIP()
         if err != nil {
             return nil, err
         }
@@ -75,14 +76,17 @@ func asyncQuery(m *dns.Msg, upstream []string) (*dns.Msg, error) {
 				return
             }
             dnsConn := &dns.Conn{Conn: conn}
+            dnsConn.SetWriteDeadline(time.Now().Add(1*time.Second))
             err = dnsConn.WriteMsg(m)
 			if err != nil {
 				res <- response{nil, err}
 				return
 			}
+            dnsConn.SetReadDeadline(time.Now().Add(1*time.Second))
             rs, err = dnsConn.ReadMsg()
             if err != nil {
 				res <- response{nil, err}
+				return
             }
 			res <- response{rs, err}
 		}(i)

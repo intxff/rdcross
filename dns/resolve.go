@@ -13,6 +13,14 @@ type _Resolver struct {
 
 var resolver = new(_Resolver)
 
+func ResolveIP(domain string) ([]net.IP, error) {
+    if ips, err := ResolveIPv4(domain); err == nil {
+        return ips, err
+    }
+
+    return ResolveIPv6(domain)
+}
+
 func ResolveIPv4(domain string) ([]net.IP, error) {
 	out := make([]net.IP, 0)
 	if len(resolver.Upstream) == 0 {
