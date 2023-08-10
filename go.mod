@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/miekg/dns v1.1.50
-	github.com/shadowsocks/go-shadowsocks2 v0.1.5
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/sys v0.0.0-20220804214406-8e32c043e418

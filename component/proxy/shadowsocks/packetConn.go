@@ -8,7 +8,7 @@ import (
 
 	"github.com/intxff/rdcross/component/message"
 	"github.com/intxff/rdcross/component/proxy"
-	"github.com/shadowsocks/go-shadowsocks2/socks"
+	"github.com/intxff/rdcross/component/proxy/socks"
 )
 
 type udpMsg struct {
@@ -124,7 +124,7 @@ func (p *PacketShadowsocks) WriteMsgTo(msg message.Message, addr net.Addr) error
 	port := []byte{byte(m.RemotePort >> 8), byte(m.RemotePort)}
 	payloadStart := 0
 	if m.Domain != "" {
-		p.wBuffer[saltSize] = socks.AtypDomainName
+		p.wBuffer[saltSize] = socks.AtypDomain
 		p.wBuffer[saltSize+1] = byte(len(m.Domain))
 		n := copy(p.wBuffer[saltSize+2:saltSize+2+len(m.Domain)], []byte(m.Domain))
 		copy(p.wBuffer[saltSize+2+n:saltSize+2+n+2], port)
